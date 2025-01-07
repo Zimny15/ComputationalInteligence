@@ -1,0 +1,2 @@
+# ComputationalInteligence
+Studies project
