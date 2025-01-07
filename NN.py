@@ -35,6 +35,6 @@ for start in range(len(dane)):  #Testujemy różne startowe miasta
 
 print("THE BEST\n")
 for city in best_path:
-    print(city + 1)  #Indeksy zaczynają się od 0, więc dodajemy 1
+    print(city + 1)  #Indeksy zaczynają się od 0, więc dodajemy 1 żeby otrzymać oryginalne numery miast
 print(total_road)
 
