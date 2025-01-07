@@ -42,3 +42,9 @@ for start in range(liczba_miast):
 
     print(f"Trasa: {', '.join(map(str, [x + 1 for x in odwiedzone]))}")
     print(f"Dystans całkowity: {dystans_calkowity}\n")
+
+
+    # Wypisanie najlepszej trasy
+print("Najlepsza trasa:")
+print(f"Trasa: {', '.join(map(str, [x + 1 for x in najlepsza_trasa]))}")
+print(f"Dystans całkowity: {najlepszy_dystans}")
