@@ -8,7 +8,8 @@ dane = np.array(dane)
 
 print(dane)
 
-total_road = len(dane)*max(dane[0]) 
+total_road = len(dane) * max(dane[0])  
+best_path = []  #Przechowywanie najlepszej ścieżki
 
 for start in range(len(dane)):  #Testujemy różne startowe miasta
     visited_cities = [start]
@@ -23,18 +24,18 @@ for start in range(len(dane)):  #Testujemy różne startowe miasta
         visited_cities.append(next_city)
         road_length += mask[next_city]
 
-    #Powrót do miasta startowego
+    # Powrót do miasta startowego
     road_length += dane[visited_cities[-1]][visited_cities[0]]
-    for city in visited_cities:
-        print(city + 1)  
-    print(total_road)
-    #Sprawdzenie, czy mamy krótszą trasę
+
+    # ✅ Drukowanie aktualnie sprawdzanej trasy
+    print("Aktualna trasa:", [int(city + 1) for city in visited_cities])
+    print("Długość trasy:", road_length, "\n")
+
+    # Sprawdzenie, czy mamy krótszą trasę
     if road_length < total_road:
         total_road = road_length
-        best_path = visited_cities
+        best_path = visited_cities.copy()  
 
-print("THE BEST\n")
-for city in best_path:
-    print(city + 1)  #Indeksy zaczynają się od 0, więc dodajemy 1 żeby otrzymać oryginalne numery miast
-print(total_road)
-
+print("THE BEST \n")
+print("Najlepsza trasa:", [int(city + 1) for city in best_path])
+print("Najkrótsza długość trasy:", total_road)
