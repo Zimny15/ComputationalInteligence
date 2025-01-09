@@ -8,8 +8,9 @@ dane2 = pd.read_excel(wd+'/dane/Dane_TSP_76.xlsx', index_col= 0, header = 0)
 dane3 = pd.read_excel(wd+'/dane/Dane_TSP_127.xlsx', index_col= 0, header = 0)
 dane1 = np.array(dane1)
 dane2 = np.array(dane2)
-np.fill_diagonal(dane2,0) 
 dane3 = np.array(dane3)
+
+np.fill_diagonal(dane2,0) #Plik _76 nie zawierał 0 po przekątnych
 
 def path_length(route, dist_matrix):
     length = sum(dist_matrix[route[i], route[i + 1]] for i in range(len(route) - 1))
@@ -50,4 +51,4 @@ def nn(dane):
     print("Najlepsza trasa:", [int(city + 1) for city in best_path])
     print("Najkrótsza długość trasy:", total_road)
 
-nn(dane2)
+nn(dane1)
