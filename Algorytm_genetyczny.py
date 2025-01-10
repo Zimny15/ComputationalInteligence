@@ -154,10 +154,12 @@ def genetic_algorithm(dist_matrix, selection, elitism = True, max_gen=100, mutat
 
         init_pop = next_pop #Zastępujemy starą generacje nowym pokoleniem
         
-        best_path = max(init_pop, key=lambda i: fitness(i,dist_matrix))
+        #Najlepszy osobnik w obecnej generacji
+        best_path = max(init_pop, key=lambda i: fitness(i, dist_matrix))
         total_road = path_length(best_path, dist_matrix)
-        print("Generacja: ",gen,"\n", "Najlepsze rozwiązanie: ", total_road, [(city + 1 ) for city in best_path])
         
+        print("Generacja:", gen, "\nNajlepsze rozwiązanie:", total_road, [(city + 1) for city in best_path])
 
-genetic_algorithm(dane1, max_gen=100, selection= roulette)
+
+genetic_algorithm(dane1, max_gen=5000, selection= roulette)
 
