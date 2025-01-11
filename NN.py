@@ -1,6 +1,7 @@
 import pandas as pd 
 import numpy as np
 import os 
+import sys
 
 wd = os.path.dirname(os.path.realpath(__file__))
 dane1 = pd.read_excel(wd+'/dane/Dane_TSP_48.xlsx', index_col= 0, header = 0)
@@ -11,6 +12,8 @@ dane2 = np.array(dane2)
 dane3 = np.array(dane3)
 
 np.fill_diagonal(dane2,0) #Plik _76 nie zawierał 0 po przekątnych
+
+MAX = sys.maxsize
 
 def path_length(route, dist_matrix):
     length = sum(dist_matrix[route[i], route[i + 1]] for i in range(len(route) - 1))
@@ -28,7 +31,7 @@ def nn(dane):
         while len(visited_cities) < len(dane):
             mask = dane[visited_cities[-1]].copy() 
             for i in visited_cities:
-                mask[i] = max(mask)  #Zapobiegam wybieraniu odwiedzonych miast
+                mask[i] = MAX #Zapobiegam wybieraniu odwiedzonych miast
 
             next_city = np.argmin(mask)
             visited_cities.append(next_city)
