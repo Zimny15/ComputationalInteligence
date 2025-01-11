@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import os
+import sys
 import random
 
 wd = os.path.dirname(os.path.realpath(__file__))
@@ -19,10 +20,11 @@ def path_length(path, dist_matrix):
     return length
 
 def fitness(path, dist_matrix):
-    return 1/path_length(path, dist_matrix) #Im krótsza trasa, tym większa wartość
+    return 1.0/path_length(path, dist_matrix) #Im krótsza trasa, tym większa wartość
 
 def nn(dane): #Posłuży nam do wygenerowania początkowej populacji
 
+    MAX = sys.maxsize    
     population = []  #Przechowywanie wszystkich wygenerowanych tras
 
     for start in range(len(dane)):  #Testujemy różne startowe miasta
@@ -31,7 +33,7 @@ def nn(dane): #Posłuży nam do wygenerowania początkowej populacji
         while len(visited_cities) < len(dane):
             mask = dane[visited_cities[-1]].copy() 
             for i in visited_cities:
-                mask[i] = max(mask)  #Zapobiegamy wybieraniu odwiedzonych miast
+                mask[i] = MAX  #Zapobiegamy wybieraniu odwiedzonych miast
             next_city = np.argmin(mask)
             visited_cities.append(int(next_city))
 
@@ -42,15 +44,15 @@ def nn(dane): #Posłuży nam do wygenerowania początkowej populacji
 ## DODAJ Co najmniej dwie metody selekcji i dwie metody krzyżowania ##
 
 def roulette(init_pop, dist_matrix):
-
+    
     pop_fit = []
-    for _ in range(len(init_pop)):
-        pop_fit.append(fitness(init_pop[_], dist_matrix))
+    for i in range(len(init_pop)):
+        pop_fit.append(fitness(init_pop[i], dist_matrix))
 
     probs = [pop_fit[i]/sum(pop_fit) for i in range(len(pop_fit))]
 
     #Losujemy rodziców według obliczonych prawdopodobieństw
-    parents = random.choices(init_pop, weights = probs, k = len(init_pop)) #Losujemy rodziców 
+    parents = random.choices(init_pop, weights = probs, k = len(init_pop))  
 
     return parents
 
@@ -84,49 +86,65 @@ def tournament(init_pop, dist_matrix, k=3):
     return parents
 
 def mutation(child, mutation_prob): #W przpyadku wylosowania mutacji zamieniamy dwa miasta miejscami
-    n = len(child)
     if mutation_prob > random.random():
-        i,j = random.sample(range(0, n), 2)
-        temp = child[i]
-        child[i] = child[j]
-        child[j] = temp
+        i, j = sorted(random.sample(range(len(child)), 2))
+        child[i:j+1] = reversed(child[i:j+1])
     return child
 
 def order_crossover(parent1, parent2):
     #Losujemy dwa indeksy, między którymi będziemy wymieniać fragmenty
     n = len(parent1)
-    cxpoint1, cxpoint2 = sorted(random.sample(range(n), 2))  #Sortujemy, żeby prawidłowo wybierać przedziały 
-    
+    point1, point2 = sorted(random.sample(range(n), 2))  #Sortujemy, żeby prawidłowo wybierać przedziały 
     #Tworzymy dziecko kopiując część rodzica 1
     child = [None] * n
-    child[cxpoint1:cxpoint2+1] = parent1[cxpoint1:cxpoint2+1]
+    child[point1:point2+1] = parent1[point1:point2+1]
     
     #Wypełniamy resztę dziecka, kopiując elementy z rodzica 2, pomijając te, które już są w dziecku
-    current_pos = (cxpoint2 + 1) % n
+    current_pos = (point2 + 1) % n
     for i in range(n):
-        item = parent2[(cxpoint2 + 1 + i) % n]
-        if item not in child:
-            child[current_pos] = item
+        city = parent2[(point2 + 1 + i) % n] #Dzięki modulo jesteśmy wstanie wrócić na początek, po przekroczeniu 47
+        if city not in child:
+            child[current_pos] = city
             current_pos = (current_pos + 1) % n
 
     return child
 
-def genetic_algorithm(dist_matrix, selection, elitism = True, max_gen=100, mutation_prob=0.01):
+def pmx_crossover(parent1, parent2):
+    n = len(parent1)
+    cxpoint1, cxpoint2 = sorted(random.sample(range(n), 2))
+
+    child = [-1] * n
+    child[cxpoint1:cxpoint2+1] = parent1[cxpoint1:cxpoint2+1]
+
+    for i in range(cxpoint1, cxpoint2+1):
+        if parent2[i] not in child:
+            swap_index = i
+            while child[swap_index] != -1:
+                swap_index = parent2.index(parent1[swap_index])
+            child[swap_index] = parent2[i]
+
+    for i in range(n):
+        if child[i] == -1:
+            child[i] = parent2[i]
+
+    return child
+
+def genetic_algorithm(dist_matrix, selection, crossover, elitism = True, max_gen=100, mutation_prob=0.01):
 
     for gen in range(max_gen + 1):
 
         if gen == 0:
             init_pop = nn(dist_matrix)  #Inicjalizacja populacji 
-        
+
         #Selekcja
         parents = selection(init_pop, dist_matrix)
-
+        
         #Krzyżowanie
         next_pop = [] #Tutaj przechowujemy nowe pokolenie
         if len(parents) % 2 == 0:
             for i in range(0, len(parents), 2): #Dzieci zastępują rodziców i mutują
-                child1 = order_crossover(parents[i], parents[i+1])
-                child2 = order_crossover(parents[i], parents[i+1])
+                child1 = crossover(parents[i], parents[i+1])
+                child2 = crossover(parents[i], parents[i+1])
 
                 child1 = mutation(child1, mutation_prob)
                 child2 = mutation(child2, mutation_prob)
@@ -135,8 +153,8 @@ def genetic_algorithm(dist_matrix, selection, elitism = True, max_gen=100, mutat
                 next_pop.append(child2)
         else: #Przypadek gdy liczba miast jest nieparzysta
             for i in range(0, len(parents)-1, 2):
-                child1 = order_crossover(parents[i], parents[i+1])
-                child2 = order_crossover(parents[i], parents[i+1])
+                child1 = crossover(parents[i], parents[i+1])
+                child2 = crossover(parents[i], parents[i+1])
 
                 child1 = mutation(child1, mutation_prob)
                 child2 = mutation(child2, mutation_prob)
@@ -153,7 +171,7 @@ def genetic_algorithm(dist_matrix, selection, elitism = True, max_gen=100, mutat
             next_pop[0] = the_best
 
         init_pop = next_pop #Zastępujemy starą generacje nowym pokoleniem
-        
+
         #Najlepszy osobnik w obecnej generacji
         best_path = max(init_pop, key=lambda i: fitness(i, dist_matrix))
         total_road = path_length(best_path, dist_matrix)
@@ -161,5 +179,5 @@ def genetic_algorithm(dist_matrix, selection, elitism = True, max_gen=100, mutat
         print("Generacja:", gen, "\nNajlepsze rozwiązanie:", total_road, [(city + 1) for city in best_path])
 
 
-genetic_algorithm(dane1, max_gen=5000, selection= roulette)
+genetic_algorithm(dane1, selection=roulette, crossover = order_crossover,max_gen=1000, mutation_prob=0.01)
 
