@@ -1,11 +1,18 @@
 import pandas as pd 
 import numpy as np
 import random
-import os 
+import os
+import time
+from datetime import datetime
 
 wd = os.path.dirname(os.path.realpath(__file__))
-dane = pd.read_excel(wd+'/dane/Dane_TSP_48.xlsx', index_col= 0, header = 0)
-dane = np.array(dane)
+dane1 = pd.read_excel(wd+'/dane/Dane_TSP_48.xlsx', index_col= 0, header = 0)
+dane2 = pd.read_excel(wd+'/dane/Dane_TSP_76.xlsx', index_col= 0, header = 0)
+dane3 = pd.read_excel(wd+'/dane/Dane_TSP_127.xlsx', index_col= 0, header = 0)
+dane1 = np.array(dane1)
+dane2 = np.array(dane2)
+np.fill_diagonal(dane2,0) 
+dane3 = np.array(dane3)
 
 def path_length(route, dist_matrix):
     length = sum(dist_matrix[route[i], route[i + 1]] for i in range(len(route) - 1))
@@ -31,83 +38,243 @@ def insert(path):
     new_path.insert(j, city)
     return new_path
 
-
-# Symulowane wyżarzanie
-def symulowane_wyżarzanie(macierz, epoki, temperatura_poczatkowa, schladzanie, liczba_prob, metoda_ruchu):
+# Algorytm symulowanego wyżarzania
+def symulowane_wyżarzanie(
+        macierz, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=50, metoda_ruchu=insert, wd="."
+    ):
     liczba_miast = len(macierz)
+    # Tworzenie folderu wynikowego, jeśli nie istnieje
+    folder_wyniki = os.path.join(wd, "wyniki_wyzarzanie")
+    os.makedirs(folder_wyniki, exist_ok=True)
 
-    # Inicjalizacja
-    aktualna_trasa = list(range(liczba_miast))
-    random.shuffle(aktualna_trasa)
-    najlepsza_trasa = aktualna_trasa.copy()
-    najlepszy_dystans = path_length(najlepsza_trasa, macierz)
+    wszystkie_rozwiazania = []
+    start_time = time.time()  # Pomiar czasu działania
 
-    temperatura = temperatura_poczatkowa
+    for i in range(liczba_iteracji):       
+        # Inicjalizacja
+        aktualna_trasa = list(range(liczba_miast))
+        random.shuffle(aktualna_trasa)
+        najlepsza_trasa = aktualna_trasa.copy()
+        najlepszy_dystans = path_length(najlepsza_trasa, macierz)
 
-    for epoka in range(epoki):
-        for _ in range(liczba_prob):
-            # Generowanie nowej trasy według wybranej metody ruchu
-            nowa_trasa = metoda_ruchu(aktualna_trasa)
-            aktualny_dystans = path_length(aktualna_trasa, macierz)
-            nowy_dystans = path_length(nowa_trasa, macierz)
+        temperatura = temperatura_poczatkowa
 
-            # Kryterium akceptacji nowego rozwiązania
-            if nowy_dystans < aktualny_dystans:
-                aktualna_trasa = nowa_trasa
-            else:
-                delta = nowy_dystans - aktualny_dystans
-                prawdopodobienstwo = np.exp(-delta / temperatura)
-                if random.random() < prawdopodobienstwo:
+        for epoka in range(epoki):
+            for _ in range(liczba_prob):
+                nowa_trasa = metoda_ruchu(aktualna_trasa)
+                aktualny_dystans = path_length(aktualna_trasa, macierz)
+                nowy_dystans = path_length(nowa_trasa, macierz)
+
+                # Kryterium akceptacji nowego rozwiązania
+                if nowy_dystans < aktualny_dystans:
                     aktualna_trasa = nowa_trasa
+                else:
+                    delta = nowy_dystans - aktualny_dystans
+                    prawdopodobienstwo = np.exp(-delta / temperatura)
+                    if random.random() < prawdopodobienstwo:
+                        aktualna_trasa = nowa_trasa
 
-            # Aktualizacja najlepszego rozwiązania
-            if path_length(aktualna_trasa, macierz) < najlepszy_dystans:
-                najlepsza_trasa = aktualna_trasa.copy()
-                najlepszy_dystans = path_length(najlepsza_trasa, macierz)
+                # Aktualizacja najlepszego rozwiązania
+                if path_length(aktualna_trasa, macierz) < najlepszy_dystans:
+                    najlepsza_trasa = aktualna_trasa.copy()
+                    najlepszy_dystans = path_length(najlepsza_trasa, macierz)
 
-        # Obniżenie temperatury
-        temperatura *= schladzanie
-        print(f"Epoka {epoka + 1}/{epoki}: Najlepszy dystans = {najlepszy_dystans}")
+            temperatura *= schladzanie
 
-    return najlepsza_trasa, najlepszy_dystans
+        najlepsza_trasa_od_1 = list(map(lambda x: x + 1, najlepsza_trasa))
+        najlepsza_trasa_od_1.append(najlepsza_trasa_od_1[0])
+        wszystkie_rozwiazania.append((najlepszy_dystans, najlepsza_trasa_od_1))
 
-# Wybór metody ruchu (możesz podać swap, two_opt lub insert)
-metoda_ruchu = two_opt  # Możesz zmienić na swap lub insert
+    end_time = time.time()  # Koniec pomiaru czasu działania
+    czas_dzialania = end_time - start_time
+
+    # Obliczanie średniej wartości dystansu
+    srednia_wartosc_dystansu = np.mean([dystans for dystans, _ in wszystkie_rozwiazania])
+
+    # Znalezienie najlepszego rozwiązania
+    globalnie_najlepszy_dystans, globalnie_najlepsza_trasa = min(wszystkie_rozwiazania, key=lambda x: x[0])
+
+    # Nazwa pliku wynikowego z dynamiczną datą i godziną
+    nazwa_pliku = os.path.join(folder_wyniki, f"wyniki_symulacji_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
+
+    # Parametry do zapisania w nagłówku
+    naglowek = (f"\nWyniki symulowanego wyżarzania\n"
+                f"Metoda ruchu: {metoda_ruchu.__name__}\n"
+                f"Liczba epok: {epoki}\n"
+                f"Temperatura początkowa: {temperatura_poczatkowa}\n"
+                f"Schładzanie: {schladzanie}\n"
+                f"Liczba prób: {liczba_prob}\n"
+                f"Liczba iteracji: {liczba_iteracji}\n\n")
+
+    # Zapis wyników do pliku
+    with open(nazwa_pliku, 'w') as plik:
+        plik.write(naglowek)
+        for i, (dystans, trasa) in enumerate(wszystkie_rozwiazania):
+            plik.write(f"Iteracja {i + 1}:\n")
+            plik.write(f"  Najlepsza trasa: {trasa}\n")
+            plik.write(f"  Najlepszy dystans: {dystans}\n\n")
+        plik.write(f"Najlepsze rozwiązanie z {liczba_iteracji} iteracji:\n")
+        plik.write(f"  Najlepsza trasa: {globalnie_najlepsza_trasa}\n")
+        plik.write(f"  Najlepszy dystans: {globalnie_najlepszy_dystans}\n")
+        plik.write(f"Średnia wartość dystansu z {liczba_iteracji} iteracji: {srednia_wartosc_dystansu:.2f}\n")
+        plik.write(f"Czas działania algorytmu: {czas_dzialania:.2f} sekund\n")
+
+    print(f"Wyniki zostały zapisane w pliku '{nazwa_pliku}'.")
+
+    return globalnie_najlepsza_trasa, globalnie_najlepszy_dystans
+
+
+#Dane dla 48
+symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=1, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=50, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=100, metoda_ruchu=two_opt, wd=".")
+
+
+symulowane_wyżarzanie(dane1, epoki=10, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane1, epoki=25, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane1, epoki=100, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane1, epoki=1000, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+
+
+symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.8,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.9,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.95,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
 
 
 
+symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=swap, wd=".")
+symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=insert, wd=".")
 
 
-# Przykład parametrów
-epoki = 1000
-temperatura_poczatkowa = 10000
-schladzanie = 0.99
-liczba_prob = 1000
+
+symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=1000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=5000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=20000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
 
 
-# Lista do przechowywania wyników
-wszystkie_rozwiazania = []
+#Dane dla 76
 
-for i in range(100):
-    najlepsza_trasa, najlepszy_dystans = symulowane_wyżarzanie(
-        dane, epoki, temperatura_poczatkowa, schladzanie, liczba_prob, metoda_ruchu
-    )
-    najlepsza_trasa_od_1 = list(map(lambda x: x + 1, najlepsza_trasa)) 
-    najlepsza_trasa_od_1.append(najlepsza_trasa_od_1[0])
-    
-    # Przechowywanie wyników
-    wszystkie_rozwiazania.append((najlepszy_dystans, najlepsza_trasa_od_1))
-    
-    # Wyświetlenie wyniku z bieżącej iteracji
-    print(f"Iteracja {i + 1}:")
-    print(f"  Najlepsza trasa: {najlepsza_trasa_od_1}")
-    print(f"  Najlepszy dystans: {najlepszy_dystans}\n")
 
-# Znalezienie najlepszego z najlepszych rozwiązań
-globalnie_najlepszy_dystans, globalnie_najlepsza_trasa = min(wszystkie_rozwiazania, key=lambda x: x[0])
+symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=1, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=50, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=100, metoda_ruchu=two_opt, wd=".")
 
-# Wyświetlenie globalnie najlepszego rozwiązania
-print("Najlepsze rozwiązanie z 100 iteracji:")
-print(f"  Najlepsza trasa: {globalnie_najlepsza_trasa}")
-print(f"  Najlepszy dystans: {globalnie_najlepszy_dystans}")
 
+symulowane_wyżarzanie(dane2, epoki=10, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane2, epoki=25, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane2, epoki=100, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane2, epoki=1000, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+
+
+symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.8,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.9,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.95,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+
+
+
+symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=swap, wd=".")
+symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=insert, wd=".")
+
+
+
+symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=1000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=5000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=20000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+
+
+#dane 127
+symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=1, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=50, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=100, metoda_ruchu=two_opt, wd=".")
+
+
+symulowane_wyżarzanie(dane3, epoki=10, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane3, epoki=25, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane3, epoki=100, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane3, epoki=1000, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+
+
+symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.8,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.9,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.95,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+
+
+
+symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=swap, wd=".")
+symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=insert, wd=".")
+
+
+
+symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=1000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=5000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=20000, schladzanie=0.99,
+        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
