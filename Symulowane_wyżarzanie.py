@@ -125,119 +125,119 @@ def symulowane_wyżarzanie(
     return globalnie_najlepsza_trasa, globalnie_najlepszy_dystans
 
 
-#Dane dla 48
-symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=1, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=50, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=100, metoda_ruchu=two_opt, wd=".")
+# #Dane dla 48
+# symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=1, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=50, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=100, metoda_ruchu=two_opt, wd=".")
 
 
-symulowane_wyżarzanie(dane1, epoki=10, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane1, epoki=25, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane1, epoki=100, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane1, epoki=1000, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane1, epoki=10, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane1, epoki=25, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane1, epoki=100, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane1, epoki=1000, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
 
 
-symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.8,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.9,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.95,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-
-
-
-symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=swap, wd=".")
-symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=insert, wd=".")
+# symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.8,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.9,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.95,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
 
 
 
-symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=1000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=5000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=20000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-
-
-#Dane dla 76
-
-
-symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=1, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=50, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=100, metoda_ruchu=two_opt, wd=".")
-
-
-symulowane_wyżarzanie(dane2, epoki=10, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane2, epoki=25, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane2, epoki=100, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane2, epoki=1000, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-
-
-symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.8,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.9,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.95,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=swap, wd=".")
+# symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=insert, wd=".")
 
 
 
-symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=swap, wd=".")
-symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=insert, wd=".")
+# symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=1000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=5000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane1, epoki=800, temperatura_poczatkowa=20000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+
+
+# #Dane dla 76
+
+
+# symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=1, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=50, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=100, metoda_ruchu=two_opt, wd=".")
+
+
+# symulowane_wyżarzanie(dane2, epoki=10, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane2, epoki=25, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane2, epoki=100, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane2, epoki=1000, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+
+
+# symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.8,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.9,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.95,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
 
 
 
-symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=1000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=5000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=20000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=swap, wd=".")
+# symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=insert, wd=".")
+
+
+
+# symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=1000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=5000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane2, epoki=800, temperatura_poczatkowa=20000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
 
 
 #dane 127
-symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=1, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=50, metoda_ruchu=two_opt, wd=".")
-symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
-        liczba_prob=1000, liczba_iteracji=100, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=1, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=10, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=50, metoda_ruchu=two_opt, wd=".")
+# symulowane_wyżarzanie(dane3, epoki=800, temperatura_poczatkowa=10000, schladzanie=0.99,
+#         liczba_prob=1000, liczba_iteracji=100, metoda_ruchu=two_opt, wd=".")
 
 
 symulowane_wyżarzanie(dane3, epoki=10, temperatura_poczatkowa=10000, schladzanie=0.99,
