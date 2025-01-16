@@ -50,19 +50,22 @@ def random_population(dane):
 
 def roulette(init_pop, dist_matrix):
     
-    pop_fit = []
-    for i in range(len(init_pop)):
-        pop_fit.append(fitness(init_pop[i], dist_matrix))
+    pop_fit = [fitness(ind, dist_matrix) for ind in init_pop]
+    total_fitness = sum(pop_fit)
 
-    probs = [pop_fit[i]/sum(pop_fit) for i in range(len(pop_fit))]
-    
-    #Wybór losowego punktu na kole ruletki
-    #pick = random.uniform(0, sum(probs))
-    #current = 0
-    #Losujemy rodziców według obliczonych prawdopodobieństw
-    parents = random.choices(init_pop, weights = probs, k = len(init_pop))  
+    probs = [f / total_fitness for f in pop_fit]
 
+    cum_prob = np.cumsum(probs)
+
+    parents = []
+    for _ in range(len(init_pop)):  
+        pick = random.random()  
+        for i, cp in enumerate(cum_prob):
+            if pick <= cp:
+                parents.append(init_pop[i])
+                break  #Po znalezieniu rodzica wychodzimy z pętli
     return parents
+    
 
 def linear_rank(init_pop, dist_matrix, sp=1.5): #sp - selection pressure
 
@@ -74,15 +77,23 @@ def linear_rank(init_pop, dist_matrix, sp=1.5): #sp - selection pressure
     N = len(init_pop)  #Liczba osobników
     
     #Nadajemy rangi (najgorszy osobnik ma rangę 1, najlepszy rangę N)
-    ranks = list(range(1, N + 1))
+    ranks = list(range(1,N+1))
     
     #Obliczamy prawdopodobieństwa wyboru na podstawie rangi
     probs = [(sp/N) + ((2*(sp-1)*(r-1)) / (N*(N-1))) for r in ranks]
 
     #Losujemy nowych rodziców według obliczonych prawdopodobieństw
-    parents = random.choices(sorted_pop, weights=probs, k=N)
+    cum_prob = np.cumsum(probs)
 
+    parents = []
+    for _ in range(len(init_pop)):  
+        pick = random.random()  
+        for i, cp in enumerate(cum_prob):
+            if pick <= cp:
+                parents.append(sorted_pop[i])
+                break  #Po znalezieniu rodzica wychodzimy z pętli
     return parents
+
 
 def tournament(init_pop, dist_matrix, k=3):
     parents = []
@@ -125,7 +136,7 @@ def pmx_crossover(parent1, parent2):
     n = len(parent1)
     point1, point2 = sorted(random.sample(range(n), 2))
 
-    child = [-1] * n
+    child = [-1]*n
     child[point1:point2+1] = parent1[point1:point2+1]
 
     for i in range(point1, point2+1):
@@ -194,7 +205,7 @@ def genetic_algorithm(init_method, dist_matrix, selection, crossover, elitism = 
             last_child = parents[-1]
             last_child = mutation(last_child, mutation_prob)
             next_pop.append(last_child)
-
+        
         init_pop = next_pop + the_best #Zastępujemy starą generacje nowym pokoleniem
 
     best_path = max(init_pop, key=lambda i: fitness(i, dist_matrix))
@@ -225,7 +236,7 @@ for data, dataset_name in data_source:
         print("Metoda: ", method_name)
         for _ in range(10):
             print("Iteracja nr: ", _)
-            path, road, ex_time = genetic_algorithm(nn, data, selection=method, crossover=pmx_crossover, max_gen=1000, mutation_prob=0.1)
+            path, road, ex_time = genetic_algorithm(nn, data, selection=method, crossover=pmx_crossover, max_gen=10000, mutation_prob=0.1)
             
             if road < best_road:
                 best_road = road
@@ -239,14 +250,14 @@ for data, dataset_name in data_source:
 
         results.setdefault(dataset_name, []).append({
             "Metoda selekcji": method_name,
-            "Najlepsza droga": best_road,
             "Najlepsza trasa": str(best_path),
+            "Najlepsza droga": best_road,
             "Średnia długość trasy": avg_road,
             "Średni czas (s)": avg_time
         })
 
 # Tworzenie pliku Excel i zapis wyników
-excel_writer = pd.ExcelWriter("wyniki_TSP_gen_selection.xlsx", engine="xlsxwriter")
+excel_writer = pd.ExcelWriter("wyniki_TSP_gen_selection_v3.xlsx", engine="xlsxwriter")
 
 for dataset_name, dataset_results in results.items():
     df = pd.DataFrame(dataset_results)
