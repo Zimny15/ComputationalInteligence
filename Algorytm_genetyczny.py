@@ -3,6 +3,8 @@ import pandas as pd
 import os
 import sys
 import random
+import time
+
 
 wd = os.path.dirname(os.path.realpath(__file__))
 dane1 = pd.read_excel(wd+'/dane/Dane_TSP_48.xlsx', index_col= 0, header = 0)
@@ -41,7 +43,10 @@ def nn(dane): #Posłuży nam do wygenerowania początkowej populacji
 
     return population #Zwracamy listę list z indeksami ścieżek 
 
-## DODAJ Co najmniej dwie metody selekcji i dwie metody krzyżowania ##
+def random_population(dane):
+    size = len(dane)*2
+    population = [random.sample(range(len(dane)), len(dane)) for _ in range(size)]
+    return population
 
 def roulette(init_pop, dist_matrix):
     
@@ -50,7 +55,10 @@ def roulette(init_pop, dist_matrix):
         pop_fit.append(fitness(init_pop[i], dist_matrix))
 
     probs = [pop_fit[i]/sum(pop_fit) for i in range(len(pop_fit))]
-
+    
+    #Wybór losowego punktu na kole ruletki
+    #pick = random.uniform(0, sum(probs))
+    #current = 0
     #Losujemy rodziców według obliczonych prawdopodobieństw
     parents = random.choices(init_pop, weights = probs, k = len(init_pop))  
 
@@ -85,10 +93,13 @@ def tournament(init_pop, dist_matrix, k=3):
 
     return parents
 
-def mutation(child, mutation_prob): #W przpyadku wylosowania mutacji zamieniamy dwa miasta miejscami
+def mutation(child, mutation_prob): #W przpyadku wylosowania mutacji zamieniamy dwa miasta miejscami, a potem znowu losujemy odwrócenie kolejności
     if mutation_prob > random.random():
-        i, j = sorted(random.sample(range(len(child)), 2))
-        child[i:j+1] = reversed(child[i:j+1])
+        i, j = random.sample(range(len(child)), 2)
+        child[i], child[j] = child[j], child[i]
+    if mutation_prob > random.random():
+        x, y = random.sample(range(len(child)), 2)
+        child[x:y+1] = reversed(child[x:y+1])
     return child
 
 def order_crossover(parent1, parent2):
@@ -96,31 +107,32 @@ def order_crossover(parent1, parent2):
     n = len(parent1)
     point1, point2 = sorted(random.sample(range(n), 2))  #Sortujemy, żeby prawidłowo wybierać przedziały 
     #Tworzymy dziecko kopiując część rodzica 1
-    child = [None] * n
+    child = [-1] * n
     child[point1:point2+1] = parent1[point1:point2+1]
     
-    #Wypełniamy resztę dziecka, kopiując elementy z rodzica 2, pomijając te, które już są w dziecku
-    current_pos = (point2 + 1) % n
-    for i in range(n):
-        city = parent2[(point2 + 1 + i) % n] #Dzięki modulo jesteśmy wstanie wrócić na początek, po przekroczeniu 47
+    #Wypełniamy resztę dziecka, kopiując elementy z rodzica 2
+    empty_positions = [i for i in range(n) if child[i] == -1]  #Lista indeksów do wypełnienia rodzicem 2
+    insert_index = 0  #Służy do poruszania się po liście z indeksami 
+    
+    for city in parent2:
         if city not in child:
-            child[current_pos] = city
-            current_pos = (current_pos + 1) % n
+            child[empty_positions[insert_index]] = city
+            insert_index += 1  #Przechodzimy do kolejnej pustej pozycji
 
     return child
 
 def pmx_crossover(parent1, parent2):
     n = len(parent1)
-    cxpoint1, cxpoint2 = sorted(random.sample(range(n), 2))
+    point1, point2 = sorted(random.sample(range(n), 2))
 
     child = [-1] * n
-    child[cxpoint1:cxpoint2+1] = parent1[cxpoint1:cxpoint2+1]
+    child[point1:point2+1] = parent1[point1:point2+1]
 
-    for i in range(cxpoint1, cxpoint2+1):
-        if parent2[i] not in child:
-            swap_index = i
-            while child[swap_index] != -1:
-                swap_index = parent2.index(parent1[swap_index])
+    for i in range(point1, point2+1):
+        if parent2[i] not in child: #Znaleźliśmy gen, którego nie ma w dziecku
+            swap_index = i #Miejsce jest już zajęte przez gen z rodzica1
+            while child[swap_index] != -1: 
+                swap_index = parent2.index(parent1[swap_index]) #Szukamy na jakim miejscu znajduje się w rodzicu2, gen z rodzica1, który zajmuje miejsce
             child[swap_index] = parent2[i]
 
     for i in range(n):
@@ -129,12 +141,30 @@ def pmx_crossover(parent1, parent2):
 
     return child
 
-def genetic_algorithm(dist_matrix, selection, crossover, elitism = True, max_gen=100, mutation_prob=0.01):
+def merge_crossover(parent1, parent2):
+    child = []
+    for p1, p2 in zip(parent1, parent2): #Jednocześnie iterujemy po obydwóch rodzicach 
+        if p1 not in child:
+            child.append(p1)
+        if p2 not in child:
+            child.append(p2)
+    return child
+
+def genetic_algorithm(init_method, dist_matrix, selection, crossover, elitism = True, max_gen=100, mutation_prob=0.01):
+
+    time_start = time.time()
+    elite_count = (len(dist_matrix)*5) // 100 #Chcemy, żeby elity stanowiły ok. 5% populacji 
 
     for gen in range(max_gen + 1):
-
         if gen == 0:
-            init_pop = nn(dist_matrix)  #Inicjalizacja populacji 
+            init_pop = init_method(dist_matrix)  #Inicjalizacja populacji 
+
+        #Gdy elitism = true: Zachowujemy najlepszego osobnika dla przyszłej populacji 
+        if elitism:
+            the_best = sorted(init_pop, key=lambda i: -fitness(i, dist_matrix))[:elite_count]
+            init_pop = sorted(init_pop, key=lambda i: -fitness(i, dist_matrix))[elite_count:] #Będziemy krzyżowali osobniki bez elit
+        else:
+            the_best = []
 
         #Selekcja
         parents = selection(init_pop, dist_matrix)
@@ -165,19 +195,63 @@ def genetic_algorithm(dist_matrix, selection, crossover, elitism = True, max_gen
             last_child = mutation(last_child, mutation_prob)
             next_pop.append(last_child)
 
-        #Gdy elitism = true: Zachowujemy najlepszego osobnika dla przyszłej populacji 
-        if elitism:
-            the_best = max(init_pop, key=lambda i: fitness(i, dist_matrix))  
-            next_pop[0] = the_best
+        init_pop = next_pop + the_best #Zastępujemy starą generacje nowym pokoleniem
 
-        init_pop = next_pop #Zastępujemy starą generacje nowym pokoleniem
-
-        #Najlepszy osobnik w obecnej generacji
-        best_path = max(init_pop, key=lambda i: fitness(i, dist_matrix))
-        total_road = path_length(best_path, dist_matrix)
-        
-        print("Generacja:", gen, "\nNajlepsze rozwiązanie:", total_road, [(city + 1) for city in best_path])
+    best_path = max(init_pop, key=lambda i: fitness(i, dist_matrix))
+    total_road = path_length(best_path, dist_matrix)
+    best_path = [(city + 1) for city in best_path]
+    time_end = time.time()
+    ex_time = time_end - time_start
+    return best_path, total_road, ex_time
 
 
-genetic_algorithm(dane1, selection=roulette, crossover = order_crossover,max_gen=1000, mutation_prob=0.01)
+## Zapistywanie ##
 
+data_source = [(dane1, "TSP_48"), (dane2, "TSP_76"), (dane3, "TSP_127")]
+variables = selection_methods = [("Tournament", tournament), ("Linear rank",linear_rank),("Roulette", roulette)]
+#variables =crossover_methods = [("OX1",order_crossover), ("PMX",pmx_crossover), ("MX",merge_crossover)]
+#variables =mutation_probs = [("1%",0.01),("10%",0.1),("50%",0.5),("70%",0.7)]
+#variables = gen_num = [("500",500),("1000", 1000),("5000",5000),("10000", 10000)]
+results = {}
+
+for data, dataset_name in data_source:
+    print("Data set: ", dataset_name)
+    for method_name, method in variables:
+        best_path = []
+        best_road = sys.maxsize
+        total_road = 0
+        avg_road = 0
+        total_time = 0
+        print("Metoda: ", method_name)
+        for _ in range(10):
+            print("Iteracja nr: ", _)
+            path, road, ex_time = genetic_algorithm(nn, data, selection=method, crossover=pmx_crossover, max_gen=1000, mutation_prob=0.1)
+            
+            if road < best_road:
+                best_road = road
+                best_path = path
+            
+            total_road += road
+            total_time += ex_time  
+
+        avg_road = total_road / 10
+        avg_time = total_time / 10
+
+        results.setdefault(dataset_name, []).append({
+            "Metoda selekcji": method_name,
+            "Najlepsza droga": best_road,
+            "Najlepsza trasa": str(best_path),
+            "Średnia długość trasy": avg_road,
+            "Średni czas (s)": avg_time
+        })
+
+# Tworzenie pliku Excel i zapis wyników
+excel_writer = pd.ExcelWriter("wyniki_TSP_gen_selection.xlsx", engine="xlsxwriter")
+
+for dataset_name, dataset_results in results.items():
+    df = pd.DataFrame(dataset_results)
+    df.to_excel(excel_writer, sheet_name=dataset_name, index=False)
+
+excel_writer.close()
+
+print("Zapisywanie skończone")
