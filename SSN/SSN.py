@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Input
@@ -78,10 +79,11 @@ print(data.describe())
 # Funkcja budująca i trenująca model
 def train_model(X, y, 
                 num_layers=3, neurons_per_layer=64, 
-                activation='relu', final_activation='softmax',
+                activation='relu',
                 optimizer='adam', learning_rate=0.001, 
                 batch_size=32, epochs=50, 
-                test_size=0.2, validation_split=0.1):
+                test_size=0.2, validation_split=0.1,
+                callbacks=None, log_results=True, experiment_name="default"):
     """
     Trenuje model sieci neuronowej z różnymi parametrami.
     
@@ -98,13 +100,17 @@ def train_model(X, y,
     - epochs: Liczba epok
     - test_size: Proporcja danych testowych
     - validation_split: Proporcja danych walidacyjnych
-    
+    - callbacks: Lista callbacków (np. EarlyStopping)
+    - log_results: Czy zapisywać wyniki w pliku CSV
+    - experiment_name: Nazwa eksperymentu (np. "relu_layers3")
+
     Zwraca:
     - model: Wytrenowany model
     - history: Historia treningu
+    - metrics: Wyniki na danych testowych
     """
     # Podział danych
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=np.random.randint(1000))
 
     # Normalizacja danych wejściowych
     scaler = StandardScaler()
@@ -116,7 +122,7 @@ def train_model(X, y,
     model.add(Input(shape=(X_train.shape[1],)))
     for _ in range(num_layers - 1): 
         model.add(Dense(neurons_per_layer, activation=activation))
-    model.add(Dense(1, activation=final_activation))
+    model.add(Dense(1, activation='linear'))
     
     # Kompilacja modelu
     if optimizer == 'adam':
@@ -131,55 +137,66 @@ def train_model(X, y,
     # Kompilacja modelu 
     model.compile(optimizer=opt, loss='mean_squared_error', metrics=['mae'])
     
-    # Early stopping
-    early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
+    # Callbacki
+    if callbacks is None:
+        early_stopping = EarlyStopping(monitor='val_loss', patience=20, restore_best_weights=True)
+        callbacks = [early_stopping]
     
     # Trening modelu
-    history = model.fit(X_train, y_train, validation_split=validation_split, epochs=epochs, batch_size=batch_size, callbacks=[early_stopping])
+    history = model.fit(X_train, y_train, 
+                        validation_split=validation_split, 
+                        epochs=epochs, 
+                        batch_size=batch_size, 
+                        callbacks=callbacks, 
+                        verbose=0)
     
     # Ocena modelu
     loss, mae = model.evaluate(X_test, y_test, verbose=0)
-    print(f"Test Loss: {loss:.4f}, Test MAE: {mae:.4f}")
+    predictions = model.predict(X_test)
+    mse = mean_squared_error(y_test, predictions)
+    metrics = {'Test Loss': loss, 'Test MAE': mae, 'Test MSE': mse}
+    print(f"[{experiment_name}] Test Loss: {loss:.4f}, Test MAE: {mae:.4f}, Test MSE: {mse:.4f}")
     
-    return model, history
+    # Logowanie wyników
+    if log_results:
+        results = {
+            'Experiment': experiment_name,
+            'Layers': num_layers,
+            'Neurons per Layer': neurons_per_layer,
+            'Activation': activation,
+            'Optimizer': optimizer,
+            'Learning Rate': learning_rate,
+            'Batch Size': batch_size,
+            'Epochs': epochs,
+            'Validation Split': validation_split,
+            'Test Loss': loss,
+            'Test MAE': mae,
+            'Test MSE': mse
+        }
+        results_df = pd.DataFrame([results])
+        results_df.to_csv("experiment_results.csv", mode='a', header=not pd.io.common.file_exists("experiment_results.csv"), index=False)
+        print(f"Experiment '{experiment_name}' completed. Results saved to 'experiment_results.csv'.")
 
-model, history = train_model(
-    X, y,
-    num_layers=4,                # Mniejsza liczba warstw
-    neurons_per_layer=64,        # Mniej neuronów
-    activation='relu',
-    final_activation='sigmoid',
-    optimizer='adam',
-    learning_rate=0.001,
-    batch_size=32,               # Średni rozmiar batcha
-    epochs=20,                   # Ograniczona liczba epok
-    test_size=0.2,               # Zbiór testowy: 20%
-    validation_split=0.1         # Zbiór walidacyjny: 10%
-)
-
-# Rysowanie strat i dokładności
-def plot_history(history):
-    plt.figure(figsize=(12, 5))
-
-    # Wykres strat
-    plt.subplot(1, 2, 1)
-    plt.plot(history.history['loss'], label='Loss')
-    plt.plot(history.history['val_loss'], label='Val Loss')
-    plt.title('Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
+    # Rysowanie wykresów
+    plt.figure(figsize=(10, 4))
+    plt.plot(history.history['loss'], label='Train Loss')
+    plt.plot(history.history['val_loss'], label='Validation Loss')
+    plt.title(f"Training Curve [{experiment_name}]")
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
     plt.legend()
-
-    # Wykres MAE
-    plt.subplot(1, 2, 2)
-    plt.plot(history.history['mae'], label='MAE')
-    plt.plot(history.history['val_mae'], label='Val MAE')
-    plt.title('MAE')
-    plt.xlabel('Epochs')
-    plt.ylabel('MAE')
-    plt.legend()
-
     plt.show()
 
-# Wywołanie funkcji
-plot_history(history)
+    return model, history, metrics
+
+model, history, metrics = train_model(
+    X, y,
+    num_layers=6,               # Więcej warstw
+    neurons_per_layer=256,      # Więcej neuronów
+    activation='relu',          # Funkcja aktywacji
+    optimizer='adam',           # Optymalizator
+    learning_rate=0.001,        # Domyślna szybkość uczenia
+    batch_size=8,              # Średni batch
+    epochs=200,                  # Więcej epok
+    experiment_name="improved_model1"
+)
