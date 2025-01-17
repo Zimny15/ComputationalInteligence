@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.preprocessing import StandardScaler, LabelEncoder
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Input
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import EarlyStopping
+from keras._tf_keras.keras.models import Sequential
+from keras._tf_keras.keras.layers import Dense, Input
+from keras._tf_keras.keras.optimizers import Adam, SGD, RMSprop
+from keras._tf_keras.keras.callbacks import EarlyStopping
 
 # Funkcja obliczająca odległość w km między dwoma punktami
 def haversine(lat1, lon1, lat2, lon2):
@@ -191,12 +191,12 @@ def train_model(X, y,
 
 model, history, metrics = train_model(
     X, y,
-    num_layers=6,               # Więcej warstw
+    num_layers=4,               # Więcej warstw
     neurons_per_layer=256,      # Więcej neuronów
     activation='relu',          # Funkcja aktywacji
     optimizer='adam',           # Optymalizator
     learning_rate=0.001,        # Domyślna szybkość uczenia
-    batch_size=8,              # Średni batch
-    epochs=200,                  # Więcej epok
+    batch_size=16,              # Średni batch
+    epochs=100,                  # Więcej epok
     experiment_name="improved_model1"
 )
