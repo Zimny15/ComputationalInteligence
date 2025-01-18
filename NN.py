@@ -78,4 +78,6 @@ def nn(dane, save_name):
         df.to_excel(writer, sheet_name="Wszystkie trasy", index=False)
         best_result_df.to_excel(writer, sheet_name="Najlepszy wynik", index=False)
 
+nn(dane1, "wyniki_TSP_NN_48")
 nn(dane3, "wyniki_TSP_NN_127")
+
