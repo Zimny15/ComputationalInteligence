@@ -3,11 +3,11 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from keras._tf_keras.keras.models import Sequential
 from keras._tf_keras.keras.layers import Dense, Input
-from keras._tf_keras.keras.optimizers import Adam, SGD, RMSprop
+from keras._tf_keras.keras.optimizers import Adam, SGD, RMSprop, Adadelta
 from keras._tf_keras.keras.callbacks import EarlyStopping
 
 # Funkcja obliczająca odległość w km między dwoma punktami
@@ -78,7 +78,7 @@ print(data.describe())
 
 # Funkcja budująca i trenująca model
 def train_model(X, y, 
-                num_layers=3, neurons_per_layer=64, 
+                num_layers=1, neurons_per_layer=14, 
                 activation='relu',
                 optimizer='adam', learning_rate=0.001, 
                 batch_size=32, epochs=50, 
@@ -110,7 +110,7 @@ def train_model(X, y,
     - metrics: Wyniki na danych testowych
     """
     # Podział danych
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=np.random.randint(1000))
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
 
     # Normalizacja danych wejściowych
     scaler = StandardScaler()
@@ -131,11 +131,15 @@ def train_model(X, y,
         opt = SGD(learning_rate=learning_rate)
     elif optimizer == 'rmsprop':
         opt = RMSprop(learning_rate=learning_rate)
+    elif optimizer == 'adadelta':
+        opt = Adadelta(learning_rate=learning_rate) 
     else:
-        raise ValueError("Nieprawidłowy optymalizator. Wybierz 'adam', 'sgd', lub 'rmsprop'.")
+        raise ValueError("Nieprawidłowy optymalizator. Wybierz 'adam', 'sgd', adadelta, lub 'rmsprop'.")
     
     # Kompilacja modelu 
-    model.compile(optimizer=opt, loss='mean_squared_error', metrics=['mae'])
+    #Model będzie się uczył minimalizować średni błąd kwadratowy 
+    #Będziemy monitorowali mae i mape
+    model.compile(optimizer=opt, loss='mean_squared_error', metrics=['mae','mape'])
     
     # Callbacki
     if callbacks is None:
@@ -151,11 +155,13 @@ def train_model(X, y,
                         verbose=0)
     
     # Ocena modelu
-    loss, mae = model.evaluate(X_test, y_test, verbose=0)
+    loss, mae, mape = model.evaluate(X_test, y_test, verbose=0)
+
     predictions = model.predict(X_test)
-    mse = mean_squared_error(y_test, predictions)
-    metrics = {'Test Loss': loss, 'Test MAE': mae, 'Test MSE': mse}
-    print(f"[{experiment_name}] Test Loss: {loss:.4f}, Test MAE: {mae:.4f}, Test MSE: {mse:.4f}")
+    r2 = r2_score(y_test, predictions)  #Obliczenie R^2
+
+    metrics = {'Test Loss': loss, 'Test MAE': mae, 'Test MAPE': mape, 'Test R^2': r2}
+    print(f"[{experiment_name}] Test Loss: {loss:.4f}, Test MAE: {mae:.4f}, Test MAPE: {mape:.4f}, Test R^2: {r2:.4f}")
     
     # Logowanie wyników
     if log_results:
@@ -171,28 +177,20 @@ def train_model(X, y,
             'Validation Split': validation_split,
             'Test Loss': loss,
             'Test MAE': mae,
-            'Test MSE': mse
+            'Test MAPE': mape
         }
         results_df = pd.DataFrame([results])
-        results_df.to_csv("experiment_results.csv", mode='a', header=not pd.io.common.file_exists("experiment_results.csv"), index=False)
+        file_path = os.path.join(wd, "experiment_results.csv")
+        results_df.to_csv(file_path, mode='a', header=not os.path.exists(file_path), index=False)
         print(f"Experiment '{experiment_name}' completed. Results saved to 'experiment_results.csv'.")
 
-    # Rysowanie wykresów
-    plt.figure(figsize=(10, 4))
-    plt.plot(history.history['loss'], label='Train Loss')
-    plt.plot(history.history['val_loss'], label='Validation Loss')
-    plt.title(f"Training Curve [{experiment_name}]")
-    plt.xlabel("Epochs")
-    plt.ylabel("Loss")
-    plt.legend()
-    plt.show()
+    return model, history, metrics, y_test, X_test
 
-    return model, history, metrics
-
+"""""
 model, history, metrics = train_model(
     X, y,
-    num_layers=4,               # Więcej warstw
-    neurons_per_layer=256,      # Więcej neuronów
+    num_layers= 4,               # Więcej warstw
+    neurons_per_layer=39,      # Więcej neuronów
     activation='relu',          # Funkcja aktywacji
     optimizer='adam',           # Optymalizator
     learning_rate=0.001,        # Domyślna szybkość uczenia
@@ -200,3 +198,115 @@ model, history, metrics = train_model(
     epochs=100,                  # Więcej epok
     experiment_name="improved_model1"
 )
+"""""
+## ZAPIS WYNIKÓW ##
+
+#W funkcji podajemy liczbę od 1-4, w zlaeżności od tego jaki parametr chcemy przetestować.
+#Pierwszy argument to lista wartości parametrów
+
+def param_test(params, param_type = 1):
+
+    if param_type == 1:
+        tested_param = 'Neurony'
+    elif param_type == 2:
+        tested_param = 'Warstwy'
+    elif param_type == 3:
+        tested_param = 'Wsp_uczenia'
+    elif param_type == 4:
+        tested_param = 'F_aktywacji'
+
+    os.makedirs(os.path.join(wd, "the_best_of"), exist_ok=True)
+    os.makedirs(os.path.join(wd, "all_plots"), exist_ok=True)
+
+    df_final_scores = pd.DataFrame(columns=[ #Tutaj będziemy przechowywali podsumowanie z testowania parametrów
+    'Parametr', 'Wartość', 'Najlepszy R^2', 'Średni R^2', 
+    'Najlepszy Loss', 'Średni Loss', 'Najlepsze MAE', 'Średnie MAE', 
+    'Najlepsze MAPE', "Średnie MAPE"])
+
+    for param in params: 
+        r2 = float('-inf')  #Inicjalizacja zmiennej dla najlepszego modelu
+        avg_r2 = 0
+        avg_loss = 0
+        avg_mae = 0
+        avg_mape = 0
+        best_stats = None
+
+        for i in range(5):
+            if param_type == 1:
+                exp_name = f'model_neurony_{param}_iteracja_{i+1}'
+                model, history, metrics, y_test, X_test = train_model(X, y, num_layers=4, neurons_per_layer=param, epochs=100, test_size=0.1, experiment_name=exp_name)
+            elif param_type == 2:
+                exp_name = f'model_warstwy_{param}_iteracja_{i+1}'
+                model, history, metrics, y_test, X_test = train_model(X, y, num_layers=param, neurons_per_layer=39, epochs=100, test_size=0.1, experiment_name=exp_name)
+            elif param_type == 3:
+                exp_name = f'model_wsp_uczenia_{param}_iteracja_{i+1}'
+                model, history, metrics, y_test, X_test = train_model(X, y, num_layers=4, neurons_per_layer=39, epochs=100, test_size=0.1, experiment_name=exp_name, learning_rate=param)
+            elif param_type == 4:
+                exp_name = f'model_aktywacje_{param}_iteracja_{i+1}'
+                model, history, metrics, y_test, X_test = train_model(X, y, num_layers=4, neurons_per_layer=39, epochs=100, test_size=0.1, experiment_name=exp_name, activation=param)
+
+            if metrics['Test R^2'] > r2:
+                r2 = metrics['Test R^2']
+                best_stats = metrics.copy()
+                best_hist = history.history.copy()
+                best_y_test = y_test.copy()
+                best_X_test = X_test.copy()
+                best_name = exp_name
+
+            #Zapis każdej krzywej uczenia
+            plt.figure(figsize=(10, 4))
+            plt.plot(history.history['loss'], label='Train Loss')
+            plt.plot(history.history['val_loss'], label='Validation Loss')
+            plt.title(f"Training Curve [{exp_name}]")
+            plt.xlabel("Epochs")
+            plt.ylabel("Loss")
+            plt.legend()
+            plt.savefig(os.path.join(wd, "all_plots", exp_name + ".png"))
+            plt.close()
+
+            #Sumowanie wyników do uśrednienia
+            avg_r2 += metrics['Test R^2']
+            avg_loss += metrics['Test Loss']
+            avg_mae += metrics['Test MAE']
+            avg_mape += metrics['Test MAPE']
+
+        #Obliczenie średnich wartości
+        avg_r2 /= 5
+        avg_loss /= 5
+        avg_mae /= 5
+        avg_mape /= 5
+
+        #Zapis najlepszej krzywej uczenia
+        plt.figure(figsize=(10, 4))
+        plt.plot(best_hist['loss'], label='Train Loss')
+        plt.plot(best_hist['val_loss'], label='Validation Loss')
+        plt.title(f"Training Curve [{best_name}]")
+        plt.xlabel("Epochs")
+        plt.ylabel("Loss")
+        plt.legend()
+        plt.savefig(os.path.join(wd, "the_best_of", best_name + ".png"))
+        plt.close()
+
+        #Porównanie wyników prognozowanych z rzeczywistymi
+        fig, ax = plt.subplots(1, 1, figsize = (10,6))
+        plt.xticks(fontsize = 14)
+        predictions = model.predict(best_X_test).flatten()
+        ax.hist(best_y_test - predictions, bins=30, alpha=0.8, label='Rozkład różnic')
+        plt.savefig(os.path.join(wd, "the_best_of", best_name + "_comparison.png"))
+        plt.close()
+
+        #Dodanie wyników do DataFrame
+        results = [tested_param, param, best_stats['Test R^2'], avg_r2, best_stats['Test Loss'], avg_loss, best_stats['Test MAE'], avg_mae, best_stats['Test MAPE'], avg_mape]
+        df_final_scores.loc[len(df_final_scores.index)] = results
+
+    #Zapis do CSV
+    file_path = os.path.join(wd, tested_param +".csv")
+    df_final_scores.to_csv(file_path, mode='a', header=not os.path.exists(file_path), index=False)
+
+    print("Wyniki zostały zapisane")
+    return True
+
+
+layers_num = [1,2,3,4]  #Lista liczby warstw do testu
+
+param_test(layers_num, 2)
