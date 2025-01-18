@@ -307,6 +307,6 @@ def param_test(params, param_type = 1):
     return True
 
 
-layers_num = [1,2,3,4]  #Lista liczby warstw do testu
+layers_num = [15,20]  #Lista liczby warstw do testu
 
 param_test(layers_num, 2)
