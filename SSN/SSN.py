@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+import keras as kr
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.preprocessing import StandardScaler, LabelEncoder
@@ -79,10 +80,10 @@ print(data.describe())
 # Funkcja budująca i trenująca model
 def train_model(X, y, 
                 num_layers=1, neurons_per_layer=14, 
-                activation='relu',
+                activation='tanh',
                 optimizer='adam', learning_rate=0.001, 
-                batch_size=32, epochs=50, 
-                test_size=0.2, validation_split=0.1,
+                batch_size=32, epochs=100, 
+                test_size=0.1, validation_split=0.1,
                 callbacks=None, log_results=True, experiment_name="default"):
     """
     Trenuje model sieci neuronowej z różnymi parametrami.
@@ -122,7 +123,7 @@ def train_model(X, y,
     model.add(Input(shape=(X_train.shape[1],)))
     for _ in range(num_layers - 1): 
         model.add(Dense(neurons_per_layer, activation=activation))
-    model.add(Dense(1, activation='linear'))
+    model.add(Dense(1, activation=kr.activations.relu))
     
     # Kompilacja modelu
     if optimizer == 'adam':
@@ -307,6 +308,6 @@ def param_test(params, param_type = 1):
     return True
 
 
-layers_num = [15,20]  #Lista liczby warstw do testu
+layers_num = [100,120,150]  
 
-param_test(layers_num, 2)
+param_test(layers_num, 1)
