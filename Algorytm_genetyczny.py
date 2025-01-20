@@ -41,7 +41,7 @@ def nn(dane): #Posłuży nam do wygenerowania początkowej populacji
 
         population.append(visited_cities) 
 
-    return population #Zwracamy listę list z indeksami ścieżek 
+    return population + [random.sample(range(len(dane)), len(dane)) for _ in range(len(dane))] #Zwracamy listę list z indeksami ścieżek + urozmaicam pule genów
 
 def random_population(dane):
     size = len(dane)*2
@@ -82,6 +82,8 @@ def linear_rank(init_pop, dist_matrix, sp=1.5): #sp - selection pressure
     #Obliczamy prawdopodobieństwa wyboru na podstawie rangi
     probs = [(sp/N) + ((2*(sp-1)*(r-1)) / (N*(N-1))) for r in ranks]
 
+    #Normalizacja prawdopodobieństw
+    probs = [p / sum(probs) for p in probs]
     #Losujemy nowych rodziców według obliczonych prawdopodobieństw
     cum_prob = np.cumsum(probs)
 
@@ -169,15 +171,9 @@ def genetic_algorithm(init_method, dist_matrix, selection, crossover, elitism = 
     for gen in range(max_gen + 1):
         if gen == 0:
             init_pop = init_method(dist_matrix)  #Inicjalizacja populacji 
-
-        #Gdy elitism = true: Zachowujemy najlepszego osobnika dla przyszłej populacji 
-        if elitism:
-            the_best = sorted(init_pop, key=lambda i: -fitness(i, dist_matrix))[:elite_count]
-            init_pop = sorted(init_pop, key=lambda i: -fitness(i, dist_matrix))[elite_count:] #Będziemy krzyżowali osobniki bez elit
-        else:
-            the_best = []
-
+ 
         #Selekcja
+
         parents = selection(init_pop, dist_matrix)
         
         #Krzyżowanie
@@ -205,8 +201,12 @@ def genetic_algorithm(init_method, dist_matrix, selection, crossover, elitism = 
             last_child = parents[-1]
             last_child = mutation(last_child, mutation_prob)
             next_pop.append(last_child)
-        
-        init_pop = next_pop + the_best #Zastępujemy starą generacje nowym pokoleniem
+
+        #Gdy elitism = true: Zachowujemy najlepsze osobniki dla przyszłej populacji 
+        if elitism:
+            next_pop[:elite_count] = sorted(init_pop, key=lambda i: -fitness(i, dist_matrix))[:elite_count]    
+
+        init_pop = next_pop #Zastępujemy starą generacje nowym pokoleniem
 
     best_path = max(init_pop, key=lambda i: fitness(i, dist_matrix))
     total_road = path_length(best_path, dist_matrix)
@@ -219,15 +219,16 @@ def genetic_algorithm(init_method, dist_matrix, selection, crossover, elitism = 
 ## Zapistywanie ##
 
 data_source = [(dane1, "TSP_48"), (dane2, "TSP_76"), (dane3, "TSP_127")]
-variables = selection_methods = [("Tournament", tournament), ("Linear rank",linear_rank),("Roulette", roulette)]
-#variables =crossover_methods = [("OX1",order_crossover), ("PMX",pmx_crossover), ("MX",merge_crossover)]
-#variables =mutation_probs = [("1%",0.01),("10%",0.1),("50%",0.5),("70%",0.7)]
-#variables = gen_num = [("500",500),("1000", 1000),("5000",5000),("10000", 10000)]
+#selection_methods = [("Tournament", tournament), ("Linear rank",linear_rank),("Roulette", roulette)]
+crossover_methods = [("OX1",order_crossover), ("PMX",pmx_crossover), ("MX",merge_crossover)]
+mutation_probs = [("1%",0.01),("10%",0.1),("50%",0.5),("70%",0.7)]
+gen_num = [("500",500),("1000", 1000),("5000",5000),("10000", 10000)]
+
 results = {}
 
 for data, dataset_name in data_source:
     print("Data set: ", dataset_name)
-    for method_name, method in variables:
+    for method_name, method in mutation_probs:
         best_path = []
         best_road = sys.maxsize
         total_road = 0
@@ -236,7 +237,7 @@ for data, dataset_name in data_source:
         print("Metoda: ", method_name)
         for _ in range(10):
             print("Iteracja nr: ", _)
-            path, road, ex_time = genetic_algorithm(nn, data, selection=method, crossover=pmx_crossover, max_gen=10000, mutation_prob=0.1)
+            path, road, ex_time = genetic_algorithm(nn, data, selection=tournament, crossover=pmx_crossover, max_gen=10000, mutation_prob=method)
             
             if road < best_road:
                 best_road = road
@@ -257,7 +258,7 @@ for data, dataset_name in data_source:
         })
 
 # Tworzenie pliku Excel i zapis wyników
-excel_writer = pd.ExcelWriter("wyniki_TSP_gen_selection_v3.xlsx", engine="xlsxwriter")
+excel_writer = pd.ExcelWriter(os.path.join(wd,"wyniki_TSP_gen_mutacje.xlsx"), engine="xlsxwriter")
 
 for dataset_name, dataset_results in results.items():
     df = pd.DataFrame(dataset_results)
@@ -265,4 +266,48 @@ for dataset_name, dataset_results in results.items():
 
 excel_writer.close()
 
-print("Zapisywanie skończone")
+print("Zapisywanie mutacji skończone")
+
+results = {}
+
+for data, dataset_name in data_source:
+    print("Data set: ", dataset_name)
+    for method_name, method in gen_num:
+        best_path = []
+        best_road = sys.maxsize
+        total_road = 0
+        avg_road = 0
+        total_time = 0
+        print("Metoda: ", method_name)
+        for _ in range(10):
+            print("Iteracja nr: ", _)
+            path, road, ex_time = genetic_algorithm(nn, data, selection=tournament, crossover=pmx_crossover, max_gen=method, mutation_prob=0.1)
+            
+            if road < best_road:
+                best_road = road
+                best_path = path
+            
+            total_road += road
+            total_time += ex_time  
+
+        avg_road = total_road / 10
+        avg_time = total_time / 10
+
+        results.setdefault(dataset_name, []).append({
+            "Metoda selekcji": method_name,
+            "Najlepsza trasa": str(best_path),
+            "Najlepsza droga": best_road,
+            "Średnia długość trasy": avg_road,
+            "Średni czas (s)": avg_time
+        })
+
+# Tworzenie pliku Excel i zapis wyników
+excel_writer = pd.ExcelWriter(os.path.join(wd,"wyniki_TSP_gen_generacje.xlsx"), engine="xlsxwriter")
+
+for dataset_name, dataset_results in results.items():
+    df = pd.DataFrame(dataset_results)
+    df.to_excel(excel_writer, sheet_name=dataset_name, index=False)
+
+excel_writer.close()
+
+print("Zapisywanie generacji skończone")
